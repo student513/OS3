@@ -21,6 +21,12 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+//11.26 형준
+bool compare_pri(struct list_elem* left, struct list_elem* right, void* aux){
+  return list_entry(left,struct thread, elem)->priority 
+  > list_entry(right,struct thread, elem)->priority;
+}
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -213,6 +219,10 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   intr_set_level (old_level);
+  //11.26 형준
+  //thread_unblock (t);
+  if(t->priority>thread_get_priority())
+    thread_yield();
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -253,7 +263,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //list_push_back (&ready_list, &t->elem);
+  list_insert_ordered(&ready_list,&t->elem,compare_pri,NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -324,7 +335,9 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    //list_push_back (&ready_list, &cur->elem);
+    //11.26 형준
+    list_insert_ordered(&ready_list,&cur->elem,compare_pri,NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -351,7 +364,15 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  //11.26 형준 수정필요
+  int thread_yield_flag=0;
+  if(new_priority < thread_current()->priority){
+    thread_yield_flag++;
+  }
   thread_current ()->priority = new_priority;
+  if(thread_yield_flag){
+    thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */

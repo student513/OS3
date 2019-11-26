@@ -108,6 +108,7 @@ sema_try_down (struct semaphore *sema)
 void
 sema_up (struct semaphore *sema) 
 {
+  /*
   enum intr_level old_level;
 
   ASSERT (sema != NULL);
@@ -118,6 +119,32 @@ sema_up (struct semaphore *sema)
                                 struct thread, elem));
   sema->value++;
   intr_set_level (old_level);
+  */
+  enum intr_level old_level;
+  struct thread* t, *max_pri_t;
+  struct list_elem* e, *max_pri_e;
+
+  ASSERT (sema != NULL);
+
+  old_level = intr_disable (); 
+  if (!list_empty (&sema->waiters))  {
+    // 가장 큰 priority 를 가진 waiter를 찾는다.
+    e = max_pri_e = list_begin(&sema->waiters);
+    max_pri_t = list_entry(e, struct thread, elem);
+    for (e = list_next(e); e != list_end(&sema->waiters); e = list_next(e)) {
+        t = list_entry(e, struct thread, elem);
+        if (t->priority > max_pri_t->priority) {
+            max_pri_t = t;
+            max_pri_e = e;
+        }   
+    }   
+    list_remove(max_pri_e);
+    thread_unblock(max_pri_t);
+  }
+  sema->value++;
+  intr_set_level (old_level);
+
+  thread_yield();
 }
 
 static void sema_test_helper (void *sema_);
