@@ -92,13 +92,17 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  enum intr_level old_level;
+  enum intr_level old_level; // you can see it from thread_yield()
+
   ASSERT (intr_get_level () == INTR_ON);
+  /*191126*/
   old_level=intr_disable();
-  thread_current()->waketime=start+ticks;
-  list_push_back(&block_list,&thread_current()->elem);
+  thread_current()->waketime = start+ticks;
+  list_push_back(&block_list,&thread_current()->elem); // block_list 에 넣어줌
   thread_block();
+
   intr_set_level(old_level);
+  /**/
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
