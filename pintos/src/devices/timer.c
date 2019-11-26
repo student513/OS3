@@ -30,7 +30,7 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 /*11.26 형준*/
-static struct list time_list;
+static struct list block_list;
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -38,6 +38,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(&block_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -95,7 +96,7 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
   old_level=intr_disable();
   thread_current()->waketime=start+ticks;
-  list_push_back(&time_list,&thread_current()->elem);
+  list_push_back(&block_list,&thread_current()->elem);
   thread_block();
   intr_set_level(old_level);
 }
@@ -178,16 +179,15 @@ timer_interrupt (struct intr_frame *args UNUSED)
   struct thread* t;
   struct list_elem* e;
   ticks++;
-
-  for(e=list_begin(&time_list);e!=list_end(&time_list);){
+  //11.26 형준
+  e=list_begin(&block_list);
+  while(e != list_end(&block_list)){
     t = list_entry(e,struct thread, elem);
-
-    if(t->waketime<=ticks){
+    if(t->waketime>ticks)
+      e = list_next(e);
+    else{
       e = list_remove(e);
       thread_unblock(t);
-    }
-    else{
-      e = list_next(e);
     }
   }
 
