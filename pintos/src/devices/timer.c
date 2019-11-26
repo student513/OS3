@@ -29,7 +29,8 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-
+/*11.26 형준*/
+static struct list time_list;
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -90,10 +91,12 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-
+  enum intr_level old_level;
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  thread_current()->waketime=start+ticks;
+  list_push_back(&time_list,&thread_current()->elem);
+  thread_block();
+  intr_set_level(old_level);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -170,7 +173,24 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+  /*20191126 inseok*/
+  struct thread* t;
+  struct list_elem* e;
   ticks++;
+
+  for(e=list_begin(&time_list);e!=list_end(&time_list);){
+    t = list_entry(e,struct thread, elem);
+
+    if(t->waketime<=ticks){
+      e = list_remove(e);
+      thread_unblock(t);
+    }
+    else{
+      e = list_next(e);
+    }
+  }
+
+  /**/
   thread_tick ();
 }
 
