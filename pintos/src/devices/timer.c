@@ -93,6 +93,7 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
   enum intr_level old_level;
   ASSERT (intr_get_level () == INTR_ON);
+  old_level=intr_disable();
   thread_current()->waketime=start+ticks;
   list_push_back(&time_list,&thread_current()->elem);
   thread_block();

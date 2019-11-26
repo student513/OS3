@@ -118,12 +118,12 @@ struct thread
       parent thread 의 process_execute 에서 thread_create 하고 바로 sema_down 해서 wait하고 
       child thread 의 start_process 에서 load 끝날떄쯤에 부모의 sema_up 을 해주면 된다.
     */
-    struct thread* parent;
+    
     struct semaphore sema_load;
     int exec_flag;
     /**/
 #endif
-    
+    struct thread* parent;
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
