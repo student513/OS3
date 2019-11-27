@@ -120,30 +120,32 @@ sema_up (struct semaphore *sema)
   sema->value++;
   intr_set_level (old_level);
   */
+  //11.27 형준 수정필요
   enum intr_level old_level;
-  struct thread* t, *max_pri_t;
-  struct list_elem* e, *max_pri_e;
+  struct thread* t,*max_priority_t;//
+  struct list_elem* e,*max_priority_e;//
 
   ASSERT (sema != NULL);
 
   old_level = intr_disable (); 
-  if (!list_empty (&sema->waiters))  {
+  if (!list_empty (&sema->waiters))  {//
     // 가장 큰 priority 를 가진 waiter를 찾는다.
-    e = max_pri_e = list_begin(&sema->waiters);
-    max_pri_t = list_entry(e, struct thread, elem);
-    for (e = list_next(e); e != list_end(&sema->waiters); e = list_next(e)) {
-        t = list_entry(e, struct thread, elem);
-        if (t->priority > max_pri_t->priority) {
-            max_pri_t = t;
-            max_pri_e = e;
-        }   
-    }   
-    list_remove(max_pri_e);
-    thread_unblock(max_pri_t);
-  }
+    e = list_begin(&sema->waiters);
+    max_priority_e = list_begin(&sema->waiters);
+    max_priority_t = list_entry(e, struct thread, elem);
+    while(e != list_end(&sema->waiters)){
+      t = list_entry(e, struct thread, elem);
+        if (t->priority > max_priority_t->priority) {
+            max_priority_e = e;
+            max_priority_t = t;
+        } 
+      e = list_next(e);
+    }
+    list_remove(max_priority_e);
+    thread_unblock(max_priority_t);
+  }//
   sema->value++;
   intr_set_level (old_level);
-
   thread_yield();
 }
 

@@ -220,12 +220,12 @@ thread_create (const char *name, int priority,
 
   intr_set_level (old_level);
   //11.26 형준
-  //thread_unblock (t);
+  thread_unblock (t);
   if(t->priority>thread_get_priority())
     thread_yield();
 
   /* Add to run queue. */
-  thread_unblock (t);
+  //thread_unblock (t);
 
   return tid;
 }
@@ -364,7 +364,7 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  //11.26 형준 수정필요
+  //11.26 형준
   int thread_yield_flag=0;
   if(new_priority < thread_current()->priority){
     thread_yield_flag++;
